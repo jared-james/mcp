@@ -10,9 +10,9 @@ description: >
   Facebook, TikTok, YouTube, LinkedIn, X, Threads, Pinterest, and Google
   Business Profile.
 author:
-  name: Jared James
-  github: jared-james
-repository: https://github.com/jared-james/maeve-agent
+  name: Maeve Social
+  github: maevesocial
+repository: https://github.com/maevesocial/maeve-agent
 transport:
   - http-streaming
 category: Productivity
