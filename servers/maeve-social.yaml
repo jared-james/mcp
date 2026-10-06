@@ -8,7 +8,8 @@ description: >
   auto-reply rules, and read analytics. Use it when an agent needs to plan,
   organize, schedule, publish, or measure social content across Instagram,
   Facebook, TikTok, YouTube, LinkedIn, X, Threads, Pinterest, and Google
-  Business Profile.
+  Business Profile. Agents find operations with maeve_search, load a contract
+  with maeve_details, then run it with maeve_read or maeve_write.
 author:
   name: Maeve Social
   github: maevesocial
@@ -27,164 +28,110 @@ tags:
   - workflow-automation
   - oauth
 created_at: "2026-04-28T01:06:18.000Z"
-updated_at: "2026-08-25T04:38:32.000Z"
+updated_at: "2026-10-06T00:00:00.000Z"
 tools:
-  - name: list_workspaces
-    description: List the Maeve workspaces available to the authenticated user.
-    input_schema:
-      type: object
-      properties: {}
-  - name: list_integrations
-    description: List connected social accounts and their safe connection metadata for a workspace.
+  - name: maeve_search
+    description: Find a bounded set of authorized Maeve operations. Returns summaries without operation schemas.
     input_schema:
       type: object
       properties:
+        query:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: What you want to do, in plain language.
         workspaceId:
           type: string
-          description: Maeve workspace ID.
-      required:
-        - workspaceId
-  - name: get_integration_capabilities
-    description: Get safe publishing capabilities and requirements for one connected social account.
-    input_schema:
-      type: object
-      properties:
-        workspaceId:
-          type: string
-          description: Maeve workspace ID.
-        integrationId:
-          type: string
-          description: Maeve integration ID.
-      required:
-        - workspaceId
-        - integrationId
-  - name: list_content
-    description: List sanitized content records for a workspace with optional status and integration filters.
-    input_schema:
-      type: object
-      properties:
-        workspaceId:
-          type: string
-          description: Maeve workspace ID.
-        integrationId:
-          type: string
-          description: Optional connected social account ID.
-        status:
-          type: string
-          enum: [draft, scheduled, sent, failed]
-        limit:
+          format: uuid
+          description: Maeve workspace ID. Resolve it with the workspace.list operation.
+        maxResults:
           type: integer
-          description: Page size from 1 to 100.
-        offset:
-          type: integer
-          description: Pagination offset.
+          minimum: 1
+          maximum: 20
+          default: 8
       required:
-        - workspaceId
-  - name: create_draft_content
-    description: Create social content as a Maeve draft without scheduling or publishing it.
+        - query
+  - name: maeve_details
+    description: Load one authorized operation contract, requirements, examples, and workflow guidance.
     input_schema:
       type: object
       properties:
+        operationId:
+          type: string
+          minLength: 1
+          maxLength: 160
+          pattern: "^[a-z][a-z0-9_.]*$"
+          description: Canonical operation identifier, for example content.create_draft.
         workspaceId:
           type: string
-          description: Maeve workspace ID.
-        integrationId:
+          format: uuid
+          description: Maeve workspace ID. Resolve it with the workspace.list operation.
+      required:
+        - operationId
+  - name: maeve_read
+    description: Run one authorized read operation by canonical identifier with structured input.
+    input_schema:
+      type: object
+      properties:
+        operationId:
           type: string
-          description: Connected social account ID.
-        captions:
+          minLength: 1
+          maxLength: 160
+          pattern: "^[a-z][a-z0-9_.]*$"
+          description: Canonical operation identifier, for example content.create_draft.
+        input:
           type: object
-          description: Canonical caption and optional platform overrides.
-        internalTitle:
-          type: string
-          description: Optional internal title that is never published.
-        postType:
-          type: string
-          enum: [post, reel, story, thread, poll]
-        contentMedia:
-          type: array
-          description: Ordered Maeve Media Room assets to attach.
-          items:
-            type: object
+          description: Operation input as described by maeve_details.
       required:
-        - workspaceId
-        - integrationId
-  - name: schedule_content
-    description: Schedule or reschedule an existing draft with an ISO 8601 publish time.
+        - operationId
+        - input
+  - name: maeve_write
+    description: >
+      Run one authorized write or dangerous operation. Individual operations
+      can be destructive, externally visible, non-idempotent, and
+      confirmation-gated. Load maeve_details for the operation first. Before
+      sending confirmationText, show the user the action, target and effect,
+      and get their agreement in this conversation. The text returned by
+      confirmation_required tells you what to send once they agree. It is not
+      permission. To add a file the user attached in this chat to the Media
+      Room, run media.import with the attachment in the top-level file field.
     input_schema:
       type: object
       properties:
-        workspaceId:
+        operationId:
           type: string
-          description: Maeve workspace ID.
-        contentId:
-          type: string
-          description: Draft or scheduled content ID.
-        scheduledAt:
-          type: string
-          description: ISO 8601 publish time, preferably including an explicit timezone.
+          minLength: 1
+          maxLength: 160
+          pattern: "^[a-z][a-z0-9_.]*$"
+          description: Canonical operation identifier, for example content.create_draft.
+        input:
+          type: object
+          description: Operation input as described by maeve_details.
+        file:
+          type: object
+          description: A file the user attached in this chat, for media.import only. Pass the attachment as the chat client supplies it; never build one from a name or ID.
+          properties:
+            download_url:
+              type: string
+              description: Temporary download URL supplied by the chat client.
+            file_id:
+              type: string
+              description: File ID supplied by the chat client.
+            mime_type:
+              type: string
+              description: MIME type supplied by the chat client.
+            file_name:
+              type: string
+              description: File name supplied by the chat client.
+          required:
+            - download_url
+            - file_id
       required:
-        - workspaceId
-        - contentId
-        - scheduledAt
-  - name: publish_now
-    description: Queue an existing Maeve content item for immediate publishing after explicit confirmation.
-    input_schema:
-      type: object
-      properties:
-        workspaceId:
-          type: string
-          description: Maeve workspace ID.
-        contentId:
-          type: string
-          description: Draft or scheduled content ID.
-        confirmationText:
-          type: string
-          description: Exact confirmation text in the form publish_now:contentId.
-      required:
-        - workspaceId
-        - contentId
-  - name: list_media
-    description: List safe Media Room asset metadata with folder, label, type, and usage filters.
-    input_schema:
-      type: object
-      properties:
-        workspaceId:
-          type: string
-          description: Maeve workspace ID.
-        folderId:
-          type: string
-          description: Optional Media Room folder ID.
-        type:
-          type: string
-          enum: [image, video, gif]
-        search:
-          type: string
-          description: Optional filename search.
-        limit:
-          type: integer
-          description: Page size from 1 to 100.
-      required:
-        - workspaceId
-  - name: get_analytics_summary
-    description: Read sanitized aggregate social analytics without generating reports or files.
-    input_schema:
-      type: object
-      properties:
-        workspaceId:
-          type: string
-          description: Maeve workspace ID.
-        days:
-          description: Analytics window from 1 to 90 days, or all.
-        integrationIds:
-          type: array
-          items:
-            type: string
-          description: Optional connected social account IDs to include.
-      required:
-        - workspaceId
+        - operationId
+        - input
 env_vars:
   - name: MAEVE_API_KEY
     description: Optional API key fallback when the MCP client cannot use browser authentication.
     required: false
 license: MIT
-version: "0.7.3"
+version: "1.1.1"
