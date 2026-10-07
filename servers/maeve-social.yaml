@@ -10,6 +10,7 @@ description: >
   Facebook, TikTok, YouTube, LinkedIn, X, Threads, Pinterest, and Google
   Business Profile. Agents find operations with maeve_search, load a contract
   with maeve_details, then run it with maeve_read or maeve_write.
+  maeve_write is listed only when the connection is allowed to make changes.
 author:
   name: Maeve Social
   github: maevesocial
@@ -28,7 +29,7 @@ tags:
   - workflow-automation
   - oauth
 created_at: "2026-04-28T01:06:18.000Z"
-updated_at: "2026-10-06T00:00:00.000Z"
+updated_at: "2026-10-07T00:00:00.000Z"
 tools:
   - name: maeve_search
     description: Find a bounded set of authorized Maeve operations. Returns summaries without operation schemas.
@@ -129,6 +130,8 @@ tools:
       required:
         - operationId
         - input
+install:
+  url: https://api.maevesocial.com/mcp
 env_vars:
   - name: MAEVE_API_KEY
     description: Optional API key fallback when the MCP client cannot use browser authentication.
